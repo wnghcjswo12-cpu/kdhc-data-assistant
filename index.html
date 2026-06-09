@@ -481,19 +481,40 @@
         setTimeout(() => { icon.style.transform = 'rotate(0deg)'; }, 600);
     }
 
-    // ---------- AI Chat (demo, rule-based mock responses) ----------
+    // ---------- AI Chat (실제 OpenAI GPT-4o-mini 연동, /api/chat) ----------
+    const chatHistory = [];  // {role:'user'|'assistant', content}
+
+    // API 오류 시 폴백용 규칙 기반 응답
     const KB = [
         { k: ['판교','열판매','열 판매'], a: '판교지사의 2024년 10월 열판매량은 280,100 Gcal로, 전월 대비 5.4% 증가했습니다.' },
         { k: ['lng','재고','연료'], a: '현재 LNG 재고량은 12,300 Ton으로 "충분" 상태입니다. 일일 사용량은 4,105 Ton입니다.' },
-        { k: ['기온','날씨','기상'], a: '현재(12:00) 성남시 기온은 14.2°C, 습도 45%, 풍속 3.5m/s 입니다. 어제 대비 2.1°C 상승했습니다.' },
+        { k: ['기온','날씨','기상'], a: '현재(12:00) 성남시 기온은 14.2°C, 습도 45%, 풍속 3.5m/s 입니다.' },
         { k: ['열수요','수요','열 수요'], a: '현재 예상 시간당 열수요는 842 Gcal/h이며, 수요 증가 추세입니다.' },
         { k: ['발전','전기','전력'], a: '금일 누적 발전 실적은 8,920 MWh로 전일 대비 1.1% 감소했습니다.' },
         { k: ['설비','펌프','가동'], a: '터빈 A와 보일러 1은 정상 가동 중이며, 펌프 C는 점검이 필요한 상태(경고)입니다.' }
     ];
-    function aiReply(msg) {
+    function fallbackReply(msg) {
         const low = msg.toLowerCase();
         for (const item of KB) if (item.k.some(key => low.includes(key.toLowerCase()))) return item.a;
-        return '죄송합니다, 해당 질문에 대한 데이터를 찾지 못했습니다. 열/전기, 연료, 기상 데이터 관련 키워드로 다시 질문해 주세요. (데모 응답)';
+        return '죄송합니다, 해당 질문에 대한 데이터를 찾지 못했습니다. (오프라인 폴백 응답)';
+    }
+    async function aiReply(msg) {
+        chatHistory.push({ role: 'user', content: msg });
+        try {
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: chatHistory })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+            chatHistory.push({ role: 'assistant', content: data.reply });
+            return data.reply;
+        } catch (e) {
+            const fb = fallbackReply(msg);
+            chatHistory.push({ role: 'assistant', content: fb });
+            return fb + '\n\n(⚠ AI 서버 연결 실패: ' + (e.message || e) + ')';
+        }
     }
     function addBubble(text, who) {
         const thread = document.getElementById('chat-thread');
@@ -508,14 +529,29 @@
         thread.appendChild(wrap);
         thread.scrollTop = thread.scrollHeight;
     }
-    document.getElementById('chat-form').addEventListener('submit', e => {
+    function addTyping() {
+        const thread = document.getElementById('chat-thread');
+        const wrap = document.createElement('div');
+        wrap.id = 'typing-indicator';
+        wrap.className = 'flex items-start gap-3';
+        wrap.innerHTML = '<div class="w-9 h-9 rounded-full bg-kdhc-blue-deep flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-secondary-fixed text-[20px]">smart_toy</span></div><div class="bg-surface-gray text-on-surface-variant px-4 py-3" style="border-radius:0.25rem 0.25rem 0.25rem 0;"><p class="text-body-md">입력 중…</p></div>';
+        thread.appendChild(wrap);
+        thread.scrollTop = thread.scrollHeight;
+    }
+    document.getElementById('chat-form').addEventListener('submit', async e => {
         e.preventDefault();
         const input = document.getElementById('chat-input');
+        const btn = e.target.querySelector('button[type=submit]');
         const msg = input.value.trim();
         if (!msg) return;
         addBubble(msg.replace(/</g,'&lt;'), 'user');
         input.value = '';
-        setTimeout(() => addBubble(aiReply(msg), 'ai'), 500);
+        input.disabled = true; btn.disabled = true;
+        addTyping();
+        const reply = await aiReply(msg);
+        document.getElementById('typing-indicator')?.remove();
+        addBubble(reply.replace(/</g,'&lt;').replace(/\n/g,'<br>'), 'ai');
+        input.disabled = false; btn.disabled = false; input.focus();
     });
 </script>
 </body>
