@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+
+<html lang="ko"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KDHC 데이터 도우미 - 열/전기 데이터 조회</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#f9f9fe",
+                        "border-subtle": "#E2E8F0",
+                        "outline": "#737780",
+                        "on-tertiary-fixed": "#341100",
+                        "on-primary-fixed": "#001b3c",
+                        "surface-container-highest": "#e2e2e7",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-container": "#d8885c",
+                        "primary": "#001e40",
+                        "inverse-on-surface": "#f1f0f5",
+                        "surface-gray": "#F8FAFC",
+                        "error": "#ba1a1a",
+                        "surface-dim": "#dad9de",
+                        "on-tertiary-fixed-variant": "#723610",
+                        "on-secondary-container": "#007261",
+                        "surface-container-high": "#e8e8ed",
+                        "on-surface": "#1a1c1f",
+                        "kdhc-blue-deep": "#003366",
+                        "surface-bright": "#f9f9fe",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed": "#ffdbca",
+                        "on-surface-variant": "#43474f",
+                        "on-primary-container": "#799dd6",
+                        "inverse-primary": "#a7c8ff",
+                        "secondary-container": "#68fadd",
+                        "inverse-surface": "#2f3034",
+                        "on-secondary-fixed": "#00201a",
+                        "kdhc-blue-mid": "#005CAB",
+                        "secondary": "#006b5c",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#3a5f94",
+                        "outline-variant": "#c3c6d1",
+                        "surface": "#f9f9fe",
+                        "on-primary-fixed-variant": "#1f477b",
+                        "accent-orange": "#FF6D00",
+                        "surface-variant": "#e2e2e7",
+                        "tertiary-fixed-dim": "#ffb690",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed": "#68fadd",
+                        "accent-mint": "#00BFA5",
+                        "surface-container-low": "#f4f3f8",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed-variant": "#005145",
+                        "primary-container": "#003366",
+                        "on-background": "#1a1c1f",
+                        "secondary-fixed-dim": "#44ddc1",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#a7c8ff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#d5e3ff",
+                        "tertiary-container": "#592300",
+                        "surface-container": "#eeedf2",
+                        "tertiary": "#381300"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-sm": "0.5rem",
+                        "stack-md": "1rem",
+                        "stack-lg": "2rem",
+                        "sidebar-width": "280px",
+                        "gutter": "1.5rem",
+                        "container-padding": "2rem"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Hanken Grotesk"],
+                        "label-sm": ["JetBrains Mono"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "headline-lg": ["Hanken Grotesk"],
+                        "data-display": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "data-display": ["20px", {"lineHeight": "24px", "letterSpacing": "-0.02em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Hanken Grotesk', sans-serif; background-color: #f9f9fe; }
+        .data-number { font-family: 'JetBrains Mono', monospace; text-align: right; }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col md:flex-row">
+<!-- SideNavBar (Hidden on Mobile, Visible on md+) -->
+<nav class="hidden md:flex flex-col fixed left-0 top-0 h-full w-sidebar-width z-40 bg-kdhc-blue-deep dark:bg-primary-container shadow-md">
+<div class="p-gutter flex items-center gap-4 border-b border-white/10">
+<div class="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-kdhc-blue-deep">person</span>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg text-white">운영관리 시스템</h2>
+<p class="font-body-md text-body-md text-secondary-fixed">API 연동 중 <span class="inline-block w-2 h-2 rounded-full bg-accent-mint ml-1 animate-pulse"></span></p>
+</div>
+</div>
+<div class="flex-1 py-4 overflow-y-auto">
+<a class="flex items-center gap-stack-md px-gutter py-3 text-white/70 hover:bg-primary-fixed-dim/10 hover:text-white transition-all duration-300 ease-in-out font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                대시보드
+            </a>
+<a class="flex items-center gap-stack-md px-gutter py-3 text-accent-mint border-l-4 border-accent-mint bg-primary/20 transition-all duration-300 ease-in-out font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bolt</span>
+                열/전기 데이터
+            </a>
+<a class="flex items-center gap-stack-md px-gutter py-3 text-white/70 hover:bg-primary-fixed-dim/10 hover:text-white transition-all duration-300 ease-in-out font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">ev_station</span>
+                연료/에너지 데이터
+            </a>
+<a class="flex items-center gap-stack-md px-gutter py-3 text-white/70 hover:bg-primary-fixed-dim/10 hover:text-white transition-all duration-300 ease-in-out font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">thermostat</span>
+                기상 정보
+            </a>
+<a class="flex items-center gap-stack-md px-gutter py-3 text-white/70 hover:bg-primary-fixed-dim/10 hover:text-white transition-all duration-300 ease-in-out font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">smart_toy</span>
+                AI 채팅
+            </a>
+</div>
+<div class="p-gutter border-t border-white/10">
+<button class="w-full py-2 mb-4 bg-white/10 text-white rounded font-body-md text-body-md border border-white/20 hover:bg-white/20 transition-colors">
+                데이터 리포트 다운로드
+            </button>
+<a class="flex items-center gap-stack-md px-gutter py-2 text-white/70 hover:text-white font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">help</span> 고객센터
+            </a>
+<a class="flex items-center gap-stack-md px-gutter py-2 text-white/70 hover:text-white font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">logout</span> 로그아웃
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col md:ml-sidebar-width min-h-screen">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-gutter h-16 bg-surface-container-lowest dark:bg-inverse-surface border-b border-border-subtle dark:border-outline-variant flat no shadows md:w-[calc(100%-280px)]">
+<div class="flex items-center gap-4">
+<button class="md:hidden text-kdhc-blue-deep">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="font-headline-lg text-headline-lg font-bold text-kdhc-blue-deep dark:text-inverse-primary">KDHC 데이터 도우미</h1>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-outline">search</span>
+<input class="pl-10 pr-4 py-2 border border-border-subtle rounded-full bg-surface-gray focus:outline-none focus:border-kdhc-blue-deep focus:ring-1 focus:ring-kdhc-blue-deep text-body-md w-64 transition-colors" placeholder="열판매량, 전기판매량 검색..." type="text"/>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<button class="p-2 hover:bg-surface-container-low rounded-full transition-colors duration-200"><span class="material-symbols-outlined">notifications</span></button>
+<button class="p-2 hover:bg-surface-container-low rounded-full transition-colors duration-200"><span class="material-symbols-outlined">settings</span></button>
+<button class="p-2 hover:bg-surface-container-low rounded-full transition-colors duration-200"><span class="material-symbols-outlined">account_circle</span></button>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 p-gutter pt-24 pb-8">
+<div class="max-w-7xl mx-auto space-y-8">
+<!-- Page Header & Filters -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+<div>
+<h2 class="font-headline-xl text-headline-xl text-primary mb-1">열/전기 생산·판매 상세 데이터</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">각 지사별 상세 운영 데이터를 비교 분석합니다.</p>
+</div>
+<div class="flex items-center gap-3 bg-white p-2 rounded-lg border border-border-subtle shadow-sm">
+<select class="border-none bg-transparent focus:ring-0 font-body-md text-body-md text-primary cursor-pointer">
+<option>2024년</option>
+<option>2023년</option>
+</select>
+<div class="w-px h-6 bg-border-subtle"></div>
+<select class="border-none bg-transparent focus:ring-0 font-body-md text-body-md text-primary cursor-pointer">
+<option>10월</option>
+<option>9월</option>
+</select>
+<button class="ml-2 bg-kdhc-blue-deep text-white px-4 py-1.5 rounded font-body-md text-body-md hover:bg-kdhc-blue-mid transition-colors">
+                            조회
+                        </button>
+</div>
+</div>
+<!-- Data Overview Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Heat Card -->
+<div class="bg-white rounded border border-border-subtle p-6 flex flex-col justify-between h-full">
+<div class="border-b-2 border-kdhc-blue-deep pb-3 mb-4 flex justify-between items-end">
+<h3 class="font-headline-lg text-headline-lg text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-accent-orange">local_fire_department</span> 총 열판매량
+                            </h3>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Gcal</span>
+</div>
+<div>
+<div class="flex items-baseline justify-between mb-2">
+<span class="font-data-display text-[40px] leading-tight font-bold text-primary data-number">1,452,030</span>
+<div class="flex items-center text-secondary font-label-sm text-label-sm bg-secondary/10 px-2 py-1 rounded">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span class="ml-1">+4.2% (전월대비)</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2">전년 동월 대비 2.1% 증가하여 안정적인 공급을 유지 중입니다.</p>
+</div>
+</div>
+<!-- Electricity Card -->
+<div class="bg-white rounded border border-border-subtle p-6 flex flex-col justify-between h-full">
+<div class="border-b-2 border-kdhc-blue-deep pb-3 mb-4 flex justify-between items-end">
+<h3 class="font-headline-lg text-headline-lg text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-accent-mint" style="font-variation-settings: 'FILL' 1;">bolt</span> 총 전기판매량
+                            </h3>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">MWh</span>
+</div>
+<div>
+<div class="flex items-baseline justify-between mb-2">
+<span class="font-data-display text-[40px] leading-tight font-bold text-primary data-number">892,105</span>
+<div class="flex items-center text-error font-label-sm text-label-sm bg-error/10 px-2 py-1 rounded">
+<span class="material-symbols-outlined text-[16px]">trending_down</span>
+<span class="ml-1">-1.5% (전월대비)</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2">일부 발전소 정비로 인해 전월 대비 소폭 감소하였습니다.</p>
+</div>
+</div>
+</div>
+<!-- Detailed Data Table -->
+<div class="bg-white border border-border-subtle rounded overflow-hidden">
+<div class="p-4 border-b border-border-subtle bg-surface-gray flex justify-between items-center">
+<h4 class="font-headline-lg text-headline-lg text-primary">지사별 상세 실적 (2024년 10월 기준)</h4>
+<button class="text-kdhc-blue-deep flex items-center gap-1 font-body-md text-body-md hover:underline">
+<span class="material-symbols-outlined text-sm">download</span> CSV 다운로드
+                        </button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[800px]">
+<thead>
+<tr class="bg-surface-gray border-b border-border-subtle">
+<th class="p-4 font-body-md text-body-md font-semibold text-on-surface-variant whitespace-nowrap">지사명</th>
+<th class="p-4 font-body-md text-body-md font-semibold text-on-surface-variant text-right whitespace-nowrap">열생산량 (Gcal)</th>
+<th class="p-4 font-body-md text-body-md font-semibold text-on-surface-variant text-right whitespace-nowrap">열판매량 (Gcal)</th>
+<th class="p-4 font-body-md text-body-md font-semibold text-on-surface-variant text-right whitespace-nowrap">증감율</th>
+<th class="p-4 font-body-md text-body-md font-semibold text-on-surface-variant text-right whitespace-nowrap">전기생산량 (MWh)</th>
+<th class="p-4 font-body-md text-body-md font-semibold text-on-surface-variant text-right whitespace-nowrap">전기판매량 (MWh)</th>
+<th class="p-4 font-body-md text-body-md font-semibold text-on-surface-variant text-right whitespace-nowrap">증감율</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b border-border-subtle hover:bg-surface-container-low transition-colors">
+<td class="p-4 font-body-md text-body-md font-medium">강남지사</td>
+<td class="p-4 font-data-display text-data-display data-number">320,100</td>
+<td class="p-4 font-data-display text-data-display data-number text-primary">315,050</td>
+<td class="p-4 text-right">
+<span class="inline-flex items-center text-secondary font-label-sm text-label-sm"><span class="material-symbols-outlined text-[14px]">arrow_upward</span> 2.1%</span>
+</td>
+<td class="p-4 font-data-display text-data-display data-number">150,200</td>
+<td class="p-4 font-data-display text-data-display data-number text-primary">148,900</td>
+<td class="p-4 text-right">
+<span class="inline-flex items-center text-error font-label-sm text-label-sm"><span class="material-symbols-outlined text-[14px]">arrow_downward</span> 0.5%</span>
+</td>
+</tr>
+<tr class="bg-surface-gray border-b border-border-subtle hover:bg-surface-container-low transition-colors">
+<td class="p-4 font-body-md text-body-md font-medium">판교지사</td>
+<td class="p-4 font-data-display text-data-display data-number">285,500</td>
+<td class="p-4 font-data-display text-data-display data-number text-primary">280,100</td>
+<td class="p-4 text-right">
+<span class="inline-flex items-center text-secondary font-label-sm text-label-sm"><span class="material-symbols-outlined text-[14px]">arrow_upward</span> 5.4%</span>
+</td>
+<td class="p-4 font-data-display text-data-display data-number">120,400</td>
+<td class="p-4 font-data-display text-data-display data-number text-primary">118,500</td>
+<td class="p-4 text-right">
+<span class="inline-flex items-center text-secondary font-label-sm text-label-sm"><span class="material-symbols-outlined text-[14px]">arrow_upward</span> 1.2%</span>
+</td>
+</tr>
+<tr class="border-b border-border-subtle hover:bg-surface-container-low transition-colors">
+<td class="p-4 font-body-md text-body-md font-medium">파주지사</td>
+<td class="p-4 font-data-display text-data-display data-number">210,300</td>
+<td class="p-4 font-data-display text-data-display data-number text-primary">205,800</td>
+<td class="p-4 text-right">
+<span class="inline-flex items-center text-outline font-label-sm text-label-sm"><span class="material-symbols-outlined text-[14px]">remove</span> 0.0%</span>
+</td>
+<td class="p-4 font-data-display text-data-display data-number">95,000</td>
+<td class="p-4 font-data-display text-data-display data-number text-primary">93,200</td>
+<td class="p-4 text-right">
+<span class="inline-flex items-center text-error font-label-sm text-label-sm"><span class="material-symbols-outlined text-[14px]">arrow_downward</span> 3.1%</span>
+</td>
+</tr>
+<tr class="bg-surface-gray border-b border-border-subtle hover:bg-surface-container-low transition-colors">
+<td class="p-4 font-body-md text-body-md font-medium">수원지사</td>
+<td class="p-4 font-data-display text-data-display data-number">250,800</td>
+<td class="p-4 font-data-display text-data-display data-number text-primary">248,000</td>
+<td class="p-4 text-right">
+<span class="inline-flex items-center text-secondary font-label-sm text-label-sm"><span class="material-symbols-outlined text-[14px]">arrow_upward</span> 1.8%</span>
+</td>
+<td class="p-4 font-data-display text-data-display data-number">110,500</td>
+<td class="p-4 font-data-display text-data-display data-number text-primary">108,100</td>
+<td class="p-4 text-right">
+<span class="inline-flex items-center text-secondary font-label-sm text-label-sm"><span class="material-symbols-outlined text-[14px]">arrow_upward</span> 0.8%</span>
+</td>
+</tr>
+<tr class="border-b border-border-subtle bg-primary/5">
+<td class="p-4 font-body-md text-body-md font-bold text-primary">총계</td>
+<td class="p-4 font-data-display text-data-display font-bold data-number text-primary">1,452,030</td>
+<td class="p-4 font-data-display text-data-display font-bold data-number text-kdhc-blue-deep">1,430,950</td>
+<td class="p-4 text-right"></td>
+<td class="p-4 font-data-display text-data-display font-bold data-number text-primary">892,105</td>
+<td class="p-4 font-data-display text-data-display font-bold data-number text-kdhc-blue-deep">880,500</td>
+<td class="p-4 text-right"></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-stack-lg px-container-padding flex flex-col md:flex-row justify-between items-center bg-surface-gray dark:bg-inverse-surface border-t border-border-subtle dark:border-outline-variant flat no shadows transition-opacity duration-200">
+<p class="font-label-sm text-label-sm text-on-surface-variant dark:text-outline-variant mb-4 md:mb-0">
+                © 2024 Korea District Heating Corporation. All Rights Reserved.
+            </p>
+<div class="flex gap-4">
+<a class="font-label-sm text-label-sm text-on-surface-variant dark:text-outline-variant hover:text-kdhc-blue-mid dark:hover:text-secondary-fixed-dim transition-colors" href="#">공공데이터포털</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant dark:text-outline-variant hover:text-kdhc-blue-mid dark:hover:text-secondary-fixed-dim transition-colors" href="#">이용약관</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant dark:text-outline-variant hover:text-kdhc-blue-mid dark:hover:text-secondary-fixed-dim transition-colors" href="#">개인정보처리방침</a>
+</div>
+</footer>
+</div>
+</body></html>

@@ -1,0 +1,18 @@
+# 환경 변수 / 비밀 키
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# OS / 편집기
+.DS_Store
+.idea/
+.vscode/
